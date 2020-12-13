@@ -4,12 +4,27 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        int length = new Scanner(System.in).nextInt();
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please, enter the secret code's length:");
+        int length = scanner.nextInt();
         if (length > 10) {
             System.out.println(String.format("Error: can't generate a secret number with a length of"
                     + " %d because there aren't enough unique digits.", length));
             return;
         }
+        int turn = 1;
+        boolean isGameFinished = false;
+        String code = generateSecretCode(length);
+        System.out.println("Okay, let's start a game!");
+        while (!isGameFinished) {
+            System.out.println(String.format("Turn %d:", turn));
+            isGameFinished = gradeGuessingAttempt(code, scanner.next(), length);
+            turn++;
+        }
+        System.out.println("Congratulations! You guessed the secret code.");
+    }
+
+    private static String generateSecretCode(int length) {
         boolean success = false;
         long pseudoRandomNumber = System.nanoTime();
         StringBuilder code = new StringBuilder();
@@ -43,17 +58,14 @@ public class Main {
                 code = new StringBuilder();
             }
         }
-        System.out.println(String.format("The random secret number is %s.", code.toString()));
+        // System.out.println(String.format("The random secret number is %s.", code.toString()));
+        return code.toString();
     }
 
-    private static void stageTwoDone() {
+    private static boolean gradeGuessingAttempt(String code, String guess, int length) {
         // initialize variables
-        String code = "9305";
         int cows = 0;
         int bulls = 0;
-
-        // get input
-        String guess = new Scanner(System.in).next();
 
         // calculate bulls
         for (int i = 0; i < code.length(); i++) {
@@ -71,20 +83,32 @@ public class Main {
             }
         }
 
-        // compose result
+        // print result
+        System.out.printf("Grade: %s.\n", composeGrade(cows, bulls));
+        if (bulls == length) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private static String addS(int n, String str) {
+        return n == 1 ? str : str + "s";
+    }
+
+    private static String composeGrade(int cows, int bulls) {
+        String bullString = addS(bulls, "bull");
+        String cowString = addS(cows, "cow");
         String grade = "";
         if (bulls != 0 && cows != 0) {
-            grade = String.format("%d bull(s) and %d cow(s)", bulls, cows);
+            grade = String.format("%d %s and %d %s", bulls, bullString, cows, cowString);
         } else if (bulls != 0) {
-            grade = String.format("%d bull(s)", bulls);
+            grade = String.format("%d %s", bulls, bullString);
         } else if (cows != 0) {
-            grade = String.format("%d cow(s)", cows);
+            grade = String.format("%d %s", cows, cowString);
         } else {
             grade = "None";
         }
-
-        // print result
-        System.out.printf("Grade: %s. The secret code is %s.", grade, code);
+        return grade;
     }
 
     private static void stageOneDone() {
