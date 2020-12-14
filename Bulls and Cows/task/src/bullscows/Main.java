@@ -1,91 +1,54 @@
 package bullscows;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Arrays;
 
 public class Main {
+    public static final int MAX_CODE_LENGTH = 36;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Please, enter the secret code's length:");
-        int length = scanner.nextInt();
-        if (length > 10) {
+        System.out.println("Input the length of the secret code:");
+        int codeLength = scanner.nextInt();
+        System.out.println("Input the number of possible symbols in the code:");
+        int symbolsNumber = scanner.nextInt();
+        if (codeLength > MAX_CODE_LENGTH) {
             System.out.println(String.format("Error: can't generate a secret number with a length of"
-                    + " %d because there aren't enough unique digits.", length));
+                    + " %d because there aren't enough unique symbols.", codeLength));
             return;
         }
         int turn = 1;
         boolean isGameFinished = false;
-        //String code = generateSecretCode(length);
-        String code = generateSecretCodeRandom(length);
+        String code = generateSecretCodeRandom(codeLength, symbolsNumber);
+        System.out.printf("The secret is prepared: %s.\n", createCodeAndSymbolsView(codeLength, symbolsNumber));
         System.out.println("Okay, let's start a game!");
         while (!isGameFinished) {
             System.out.println(String.format("Turn %d:", turn));
-            isGameFinished = gradeGuessingAttempt(code, scanner.next(), length);
+            isGameFinished = gradeGuessingAttempt(code, scanner.next());
             turn++;
         }
         System.out.println("Congratulations! You guessed the secret code.");
     }
 
-    private static String generateSecretCode(int length) {
-        boolean success = false;
-        long pseudoRandomNumber = System.nanoTime();
-        StringBuilder code = new StringBuilder();
-        while (!success) {
-            StringBuilder digits = new StringBuilder(String.valueOf(pseudoRandomNumber)).reverse();
-            for (int i = 0; i < digits.length(); i++) {
-                if (code.length() == 0) {
-                    if (digits.charAt(i) != '0') {
-                        code.append(digits.charAt(i));
-                    }
-                    continue;
-                }
-                boolean isUnique = true;
-                for (int j = 0; j < code.length(); j++) {
-                    if (digits.charAt(i) == code.charAt(j)) {
-                        isUnique = false;
-                        break;
-                    }
-                }
-                if (isUnique) {
-                    code.append(digits.charAt(i));
-                }
-                if (code.length() == length) {
-                    success = true;
-                    break;
-                }
-            }
-
-            if (!success) {
-                pseudoRandomNumber = System.nanoTime();
-                code = new StringBuilder();
-            }
-        }
-        // System.out.println(String.format("The random secret number is %s.", code.toString()));
-        return code.toString();
-    }
-
-    private static String generateSecretCodeRandom(int length) {
+    private static String generateSecretCodeRandom(int length, int symbolsNumber) {
         Random random = new Random();
         StringBuilder code = new StringBuilder();
-        char[] digits = new char[10];
+        char[] symbols = new char[symbolsNumber];
         for (int i = 0; i < length; i++) {
-            if (i == 0) {
-                int randomInt = random.nextInt(9) + 1;
-                code.append(randomInt);
-                digits[randomInt] = 'X';
-                continue;
-            }
-
-            int seqNumber = random.nextInt(10 - i);
-            for (int j = 0; j < digits.length; j++) {
-                if (digits[j] == 'X') {
+            int seqNumber = random.nextInt(symbolsNumber - i);
+            for (int j = 0; j < symbols.length; j++) {
+                if (symbols[j] == 'X') {
                     continue;
                 }
-                if (digits[j] != 'X' && seqNumber != 0) {
+                if (symbols[j] != 'X' && seqNumber != 0) {
                     seqNumber--;
-                } else if (digits[j] != 'X' && seqNumber == 0) {
-                    code.append(j);
-                    digits[j] = 'X';
+                } else if (symbols[j] != 'X' && seqNumber == 0) {
+                    if (j < 10) {
+                        code.append(j);
+                    } else {
+                        code.append((char)('a' + (j - 10)));
+                    }
+                    symbols[j] = 'X';
                     break;
                 }
             } // for j
@@ -93,7 +56,7 @@ public class Main {
         return code.toString();
     }
 
-    private static boolean gradeGuessingAttempt(String code, String guess, int length) {
+    private static boolean gradeGuessingAttempt(String code, String guess) {
         // initialize variables
         int cows = 0;
         int bulls = 0;
@@ -116,12 +79,13 @@ public class Main {
 
         // print result
         System.out.printf("Grade: %s.\n", composeGrade(cows, bulls));
-        if (bulls == length) {
+        if (bulls == code.length()) {
             return true;
         } else {
             return false;
         }
     }
+
     private static String addS(int n, String str) {
         return n == 1 ? str : str + "s";
     }
@@ -142,16 +106,23 @@ public class Main {
         return grade;
     }
 
-    private static void stageOneDone() {
-        System.out.println("The secret code is prepared: ****.");
-        System.out.println();
-        System.out.println("Turn 1. Answer:");
-        System.out.println("1234");
-        System.out.println("Grade: None.");
-        System.out.println();
-        System.out.println("Turn 2. Answer:");
-        System.out.println("9876");
-        System.out.println("Grade: 4 bulls.");
-        System.out.println("Congrats! The secret code is 9876.");
+    private static char[] createAsterisks(int length) {
+        char[] asterisks = new char[length];
+        Arrays.fill(asterisks, '*');
+        return asterisks;
+    }
+
+    private static String createSymbolsView(int symbolsNumber) {
+        if (symbolsNumber > 11) {
+            return String.format("%d-%d, %c-%c", 0, 9, 'a', (char)('a' + (symbolsNumber - 11)));
+        } else if (symbolsNumber == 11) {
+            return String.format("%d-%d, %c", 0, 9, 'a');
+        } else {
+            return String.format("%d-%d", 0, symbolsNumber - 1);
+        }
+    }
+    private static String createCodeAndSymbolsView(int codeLength, int symbolsNumber) {
+        return String.format("%s (%s)",
+                String.valueOf(createAsterisks(codeLength)), createSymbolsView(symbolsNumber));
     }
 }
